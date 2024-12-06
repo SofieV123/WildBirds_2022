@@ -1,0 +1,12 @@
+Taxonomy	Netting	Decoy	Noise	Ultrason	Cannon	Reflect	Laser	Spike	Habitat	Lethal	Other
+Raptor	3.5	1.67	0	0	0	2.5	0	0	0	0	0
+Goose	0	1	0	0	3	0	0	0	0	0	0
+Crow	4	0	3	0	3	2	3	0	0	3.5	2
+Pigeon	0	0	0	0	0	3	0	0	0	0	0
+Songbird	3.67	2.33	NA	0	0	3.67	0	0	0	0	0
+Bombycillidae	0	0	NA	0	0	NA	0	0	0	0	0
+Cardinalidae	4	0	0	0	0	5	0	0	0	0	0
+Hirundinidae	3	0	0	0	0	0	0	0	0	0	0
+Mimidae	4	2.5	0	0	0	3	0	0	0	0	0
+Sturnidae	NA	NA	0	0	0	NA	0	0	0	0	0
+Turdidae	0	0	0	0	0	5	0	0	0	0	0
