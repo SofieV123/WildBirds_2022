@@ -1,65 +1,9 @@
 #NMDS Wild Birds 2023
-library(cluster)
 library(dplyr)
-library(FactoMineR)
-library(factoextra)
 library(ggplot2)
 library(indicspecies)
-library(Rtsne)
 library(tidyr)
 library(vegan)
-
-#Farm Cluster Stuff ##########################################################
-farm_lc = read.table("./land_cover.txt", sep = "\t", header = T)
-farm_sz = read.table("./farm_size.txt", sep = "\t", header = T,
-                     colClasses = c("factor", "numeric", rep("factor", 12)))
-
-farms = merge(farm_sz, farm_lc, by = "Farm")
-farms_sub = farms[, c(1:4, 12, 14, 19, 22:25, 29, 32)] #drop unused farms
-
-gower = daisy(farms_sub[,-1], metric = "gower")
-summary(gower)
-
-#Silhouete Method and PAM ####################################################
-sil = c()
-sil = c(sil, NA)
-
-for(i in 2:13) {
-  pam_c = pam(as.matrix(gower),
-              diss = T,
-              k = i)
-  sil = c(sil, pam_c$silinfo$avg.width)
-}
-
-plot(1:13, sil,
-     xlab = "Clusters",
-     ylab = "Silhouette Width")
-lines(1:13, sil)
-
-farms_pam = pam(gower, diss = T, k = 3)
-farms_sub[farms_pam$medoids, ]
-
-pam_results <- farms_sub %>%
-  dplyr::select(-Farm) %>%
-  mutate(cluster = farms_pam$clustering) %>%
-  group_by(cluster) %>%
-  do(summary = summary(.))
-
-pam_results$summary
-
-#Plotting Clusters and FMAD ###################################################
-tsne_obj <- Rtsne(gower, is_distance = TRUE, perplexity = 10)
-
-tsne.df = tsne_obj$Y %>%
-  data.frame() %>%
-  setNames(c("X", "Y")) %>%
-  mutate(cluster = factor(farms_pam$clustering))
-
-ggplot(aes(x = X, y = Y), data = tsne.df) + 
-  geom_point(aes(color = cluster, shape = farms$EcoReg))
-
-farms_sub$Cluster = tsne.df$cluster
-farms_famd = FAMD(farms_sub[,2:13], graph = T)
 
 #Bird NMDS #################################################################
 birds = read.table("./data/bird_nmds.txt", sep = "\t", header = T)  
