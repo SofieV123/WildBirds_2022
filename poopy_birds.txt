@@ -1,0 +1,37 @@
+Field	Code	Feces
+american crow	AMCR	Y
+American goldfinch	AMGO	
+barn swallow	BARS	
+blue grosbeak	BLGR	Y
+brown thrasher	BRTH	
+brown-headed cowbird	BHCO	Y
+Carolina wren	CARW	
+cattle egret	CAEG	Y
+chimney swift	CHSW	Y
+chipping sparrow	CHSP	Y
+common ground dove	CGDO	
+eastern bluebird	EABL	Y
+eastern kingbird	EAKI	Y
+eastern meadowlark	EAME	
+eastern phoebe	EAPH	Y
+European collared-dove	EUCD	
+field sparrow	FISP	Y
+fish crow	FICR	Y
+great crested flycatcher	GCFL	Y
+house finch	HOFI	Y
+house sparrow	HOSP	Y
+indigo bunting	INBU	Y
+killdeer	KILL	
+mourning dove	MODO	Y
+northern cardinal	NOCA	Y
+northern mockingbird	NOMO	Y
+painted bunting	PABU	Y
+red-winged blackbird	RWBL	Y
+rock pigeon	ROPI	
+ruby-throated hummingbird	RTHU	
+song sparrow	SOSP	
+starling	EUST	Y
+summer tanager	SUTA	Y
+white-eyed vireo	WEVI	
+eastern wood-pewee	EAPE	Y
+blue-grey gnatcatcher	BGGN	Y
