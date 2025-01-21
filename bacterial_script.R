@@ -1,14 +1,14 @@
 #Salmonella Prevalence Models
 library(AICcmodavg)
 library(dplyr)
+library(epitools)
 library(ggeffects)
 library(ggplot2)
 library(glmmTMB)
-library(MuMIn)
+library(Hmisc)
 library(patchwork)
 library(performance)
 library(psych)
-
 
 #Set Up ###################################################################
 lc = read.table("./land_cover.txt", sep = "\t", header = T)
@@ -16,13 +16,50 @@ lc = read.table("./land_cover.txt", sep = "\t", header = T)
 sal = read.table("./sal_live.txt", sep = "\t", header = T)
 
 sal$Live = case_when(sal$Cow == 1 ~ 1,
-                     sal$Chick == 1 ~ 1,
-                     sal$Other == 1 ~ 1,
-                     .default = 0)
+                    sal$Chick == 1 ~ 1,
+                    sal$Other == 1 ~ 1,
+                    .default = 0)
 sal = left_join(sal, lc, by = "Farm")
 
+#Compare moist to dry samples ###############################################
+sal_p.v = sal$Sal
+sam_m.v = sal$Moist
+chi.t = chisq.test(sal_p.v, sam_m.v)
+
+sal.m = sal[sal$Moist == 1,]
+sal$FV = paste0(sal$Farm, "-", sal$Visit, "-", sal$Year)
+sal.m$FV = paste0(sal.m$Farm, "-", sal.m$Visit, "-", sal.m$Year)
+
+vis.m = sal.m[,c(3,5,6,9:58)]
+vis.m = unique(vis.m)
+vis = sal[,c(3,5,6,9:58)]
+vis = unique(vis)
+
+farm.d.in = unique(sal$Farm)
+farm.d = lc[lc$Farm %in% farm.d.in,]
+farm.m.in = unique(sal.m$Farm)
+farm.m = lc[lc$Farm %in% farm.m.in,]
+
+sal$Moist = as.numeric(as.character(sal$Moist))
+sal$Sal = as.numeric(as.character(sal$Sal))
+sal$FV = paste0(sal$Farm, "-", sal$Visit, "-", sal$Year)
+
+sal_sum = sal[,c(7,8,13)] %>%
+  group_by(FV) %>%
+  summarize(Moist = sum(Moist),
+            Sal = sum(Sal))
+write.table(sal_sum, file = "C:/Users/sav61051/Desktop/sal_sum.txt", row.names = F)
+
+sal_n = sal %>%
+  count(Farm) 
+
+sal_sum = sal %>%
+  group_by(Farm) %>%
+  summarize(NPos = sum(Sal)) %>%
+  cbind(sal_n$n)
+
 #Model prep ###################################################################
-sal = sal[sal$Moist == 1,] #we only consider moist samples here
+sal = sal[sal$Moist == 1,]
 
 sal = sal %>%
   mutate(Nat.s = c(scale(Nat))) %>%
@@ -49,11 +86,13 @@ pairs.panels(cor_config, stars = T)
 
 #Salmonella Models ################################################
 m0 = glmmTMB(Sal ~ (1|Farm/Visit),
-             data = sal, family = binomial(link=logit))
+                data = sal, family = binomial(link=logit))
+m01 = glmmTMB(Sal ~ Year + (1|Farm/Visit),
+              data = sal, family = binomial(link = logit))
 m100 = glmmTMB(Sal ~ Water.s + Develop.s + Ag.s + Nat.s + Wet.s + Nat_IJI.s + 
-                 Chick + Cow + Other + Live + Year + (1|Farm/Visit),
-               data = sal, family = binomial(link=logit),
-               na.action = na.fail)
+                    Chick + Cow + Other + Live + Year + (1|Farm/Visit),
+                  data = sal, family = binomial(link=logit),
+                  na.action = na.fail)
 
 check_collinearity(m100)
 #We need to evaluate land cover separately
@@ -79,11 +118,11 @@ ml.8 = glmmTMB(Sal ~ Cow + Year + (1|Farm/Visit),
 ml.9 = glmmTMB(Sal ~ Other + Year + (1|Farm/Visit),
                data = sal, family = binomial(link=logit))
 ml.10 = glmmTMB(Sal ~ Live + Year + (1|Farm/Visit),
-                data = sal, family = binomial(link=logit))
+               data = sal, family = binomial(link=logit))
 
 #Landscape + Chicken ####
 mlch.1 = glmmTMB(Sal ~ Water.s + Chick + Year + (1|Farm/Visit),
-                 data = sal, family = binomial(link=logit))
+               data = sal, family = binomial(link=logit))
 mlch.2 = glmmTMB(Sal ~ Develop.s + Chick + Year + (1|Farm/Visit),
                  data = sal, family = binomial(link=logit))
 mlch.3 = glmmTMB(Sal ~ Ag.s + Chick + Year + (1|Farm/Visit),
@@ -102,11 +141,11 @@ mlch.8 = glmmTMB(Sal ~ Develop.s * Chick + Year + (1|Farm/Visit),
 mlch.9 = glmmTMB(Sal ~ Ag.s * Chick + Year + (1|Farm/Visit),
                  data = sal, family = binomial(link=logit))
 mlch.10 = glmmTMB(Sal ~ Nat.s * Chick + Year + (1|Farm/Visit),
-                  data = sal, family = binomial(link=logit))
+                 data = sal, family = binomial(link=logit))
 mlch.11 = glmmTMB(Sal ~ Wet.s * Chick + Year + (1|Farm/Visit),
-                  data = sal, family = binomial(link=logit))
+                 data = sal, family = binomial(link=logit))
 mlch.12 = glmmTMB(Sal ~ Nat_IJI.s * Chick + Year + (1|Farm/Visit),
-                  data = sal, family = binomial(link=logit))
+                 data = sal, family = binomial(link=logit))
 
 #Landscape + Cow ####
 mlcw.1 = glmmTMB(Sal ~ Water.s + Cow + Year + (1|Farm/Visit),
@@ -231,11 +270,11 @@ mlcc.12 = glmmTMB(Sal ~ Nat_IJI.s * Chick + Cow + Year + (1|Farm/Visit),
                   data = sal, family = binomial(link=logit))
 
 mlcc.13 = glmmTMB(Sal ~ Water.s * Cow + Chick + Year + (1|Farm/Visit),
-                  data = sal, family = binomial(link=logit))
+                 data = sal, family = binomial(link=logit))
 mlcc.14 = glmmTMB(Sal ~ Develop.s * Cow + Chick + Year + (1|Farm/Visit),
-                  data = sal, family = binomial(link=logit))
+                 data = sal, family = binomial(link=logit))
 mlcc.15 = glmmTMB(Sal ~ Ag.s* Cow + Chick + Year + (1|Farm/Visit),
-                  data = sal, family = binomial(link=logit))
+                 data = sal, family = binomial(link=logit))
 mlcc.16 = glmmTMB(Sal ~ Nat.s * Cow + Chick + Year + (1|Farm/Visit),
                   data = sal, family = binomial(link=logit))
 mlcc.17 = glmmTMB(Sal ~ Wet.s * Cow + Chick + Year + (1|Farm/Visit),
@@ -386,7 +425,7 @@ mod_list = list(ml.1, ml.2, ml.3, ml.4, ml.5, ml.6, ml.7, ml.8, ml.9, ml.10,
                 mlwo.9, mlwo.10, mlwo.11, mlwo.12, mlwo.13, mlwo.14, mlwo.15,
                 mlwo.16, mlwo.17, mlwo.18, mlwo.19, mlwo.20, mlwo.21, mlwo.22,
                 mlwo.23, mlwo.24, 
-                m0, m100)
+                m0, m01, m100)
 mod_nm = c("ml.1", "ml.2", "ml.3", "ml.4", "ml.5", "ml.6", "ml.7", "ml.8", "ml.9", "ml.10",
            "mlch.1", "mlch.2", "mlch.3", "mlch.4", "mlch.5", "mlch.6",
            "mlch.7", "mlch.8", "mlch.9", "mlch.10", "mlch.11", "mlch.12",
@@ -409,45 +448,88 @@ mod_nm = c("ml.1", "ml.2", "ml.3", "ml.4", "ml.5", "ml.6", "ml.7", "ml.8", "ml.9
            "mlwo.9", "mlwo.10", "mlwo.11", "mlwo.12", "mlwo.13", "mlwo.14", "mlwo.15",
            "mlwo.16", "mlwo.17", "mlwo.18", "mlwo.19", "mlwo.20", "mlwo.21", "mlwo.22",
            "mlwo.23", "mlwo.24", 
-           "m0", "m100")
+           "m0", "m01", "m100")
 
 #Evaluation ####
 aic_mod = aictab(cand.set = mod_list, modnames = mod_nm, second.ord = T, sort = T)
 summary(aic_mod)
 
 mod_list = list(mlcw.11, mlcc.17, mlco.10, mlch.10, mlwo.11)
-mod_avg = model.avg(mod_list)
-coef_tab = coefTable(mod_avg, full = T)
 
-pred_cw = ggpredict(mod_avg, terms = c("Wet.s[all]", "Cow"),
-                    typical = "mean", type = "fixed", bias_correction = T)
-pred_hn = ggpredict(mod_avg, terms = c("Nat.s[all]", "Chick"),
-                    typical = "mean", type = "fixed", bias_correction = T)
+#Average predictions for Wet * Cow ########################################
+pred.1 = ggpredict(mlcw.11, terms = c("Wet.s[all]", "Cow"),
+                   typical = "mean", type = "fixed", bias_correction = T)
+pred.2 = ggpredict(mlcc.17, terms = c("Wet.s[all]", "Cow"),
+                   typical = "mean", type = "fixed", bias_correction = T)
+pred.5 = ggpredict(mlwo.11, terms = c("Wet.s[all]", "Cow"),
+                   typical = "mean", type = "fixed", bias_correction = T)
+
+pred.1$Wet = (pred.1$x * sd(sal$Wet) + mean(sal$Wet))
+pred.2$Wet = (pred.1$x * sd(sal$Wet) + mean(sal$Wet))
+pred.5$Wet = (pred.1$x * sd(sal$Wet) + mean(sal$Wet))
+
+pred.1$Weight = aic_mod[1,6]
+pred.2$Weight = aic_mod[2,6]
+pred.5$Weight = aic_mod[5,6]
+
+#New dataset
+cw_pred = rbind(pred.1 %>% as.data.frame() %>% mutate(model = 1),
+                 pred.2%>% as.data.frame() %>% mutate(model = 2),
+                 pred.5%>% as.data.frame() %>% mutate(model = 5)) %>% 
+  mutate(weight_sum = sum(unique(Weight)),
+         mod_weight = Weight/weight_sum) %>% 
+  group_by(group, Wet) %>%
+  summarise(pred_wt = wtd.mean(predicted, mod_weight,
+                              normwt = T),
+            se_wt = wtd.var(predicted, mod_weight,
+                            normwt = T)) %>%
+  mutate(conf_low = pred_wt - (1.96*se_wt),
+         conf_upr = pred_wt + (1.96*se_wt))
+
+#Average predictions for Nat*Chick ####################################
+pred.3 = ggpredict(mlco.10, terms = c("Nat.s[all]", "Chick"),
+                   typical = "mean", type = "fixed", bias_correction = T)
+pred.4 = ggpredict(mlch.10, terms = c("Nat.s[all]", "Chick"),
+                   typical = "mean", type = "fixed", bias_correction = T)
+
+pred.3$Nat = (pred.3$x * sd(sal$Nat) + mean(sal$Nat))
+pred.4$Nat = (pred.4$x * sd(sal$Nat) + mean(sal$Nat))
+
+pred.3$Weight = aic_mod[3,6]
+pred.4$Weight = aic_mod[4,6]
+
+#New dataset
+hn_pred = rbind(pred.3 %>% as.data.frame() %>% mutate(model = 3),
+                pred.4 %>% as.data.frame() %>% mutate(model = 4)) %>% 
+  mutate(weight_sum = sum(unique(Weight)),
+         mod_weight = Weight/weight_sum) %>% 
+  group_by(group, Nat) %>%
+  summarise(pred_wt = wtd.mean(predicted, mod_weight,
+                               normwt = T),
+            se_wt = wtd.var(predicted, mod_weight,
+                            normwt = T)) %>%
+  mutate(conf_low = pred_wt - (1.96*se_wt),
+         conf_upr = pred_wt + (1.96*se_wt))
 
 #Figure 3 ###############################################################
-#Format
-pred_cw$Wet = (pred_cw$x * sd(sal$Wet) + mean(sal$Wet))
-pred_hn$Nat = (pred_hn$x * sd(sal$Nat) + mean(sal$Nat))
-
-#Plotting
-plot_cw = ggplot() +
-  geom_line(data = pred_cw, aes(x = Wet, y = predicted,
+cw_plot = ggplot() +
+  geom_line(data = cw_pred, aes(x = Wet, y = pred_wt,
                                 color = group, linetype = group),
             linewidth = 2) +
-  geom_ribbon(data = pred_cw, aes (x = Wet, ymin = conf.low, ymax = conf.high,
+  geom_ribbon(data = cw_pred, aes (x = Wet, ymin = conf_low, ymax = conf_upr,
                                    color = NULL, fill = group),
               alpha = 0.3) +
   labs(tag = "A",
-       x = "Proportion Wetlands (%)", y = "Likelihood of Salmonella (%)") +
+       x = "Proportion Wetland Cover (%)", y = "Likelihood of Salmonella (%)") +
   scale_y_continuous(breaks = c(0.00, 0.25, 0.50, 0.75, 1.00),
                      labels = c("0", "25", "50", "75", "100")) +
-  scale_color_manual(name = "Cows",
+  scale_color_manual(name = "Cattle",
                      labels = c("Absent", "Present"),
                      values = c("#D55E00", "#56B4E9")) +
-  scale_linetype_manual(name = "Cows",
+  scale_linetype_manual(name = "Cattle",
                         labels = c("Absent", "Present"),
                         values = c("dashed", "solid")) +
-  scale_fill_manual(name = "Cows",
+  scale_fill_manual(name = "Cattle",
                     labels = c("Absent", "Present"),
                     values = c("#D55E00", "#56B4E9")) +
   theme(panel.background = element_blank(), 
@@ -458,25 +540,24 @@ plot_cw = ggplot() +
         legend.title = element_text(size = 14),
         legend.text = element_text(size = 12))
 
-
-plot_hn = ggplot() +
-  geom_line(data = pred_hn, aes(x = Nat, y = predicted,
+hn_plot = ggplot() +
+  geom_line(data = hn_pred, aes(x = Nat, y = pred_wt,
                                 color = group, linetype = group),
             linewidth = 2) +
-  geom_ribbon(data = pred_hn, aes (x = Nat, ymin = conf.low, ymax = conf.high,
+  geom_ribbon(data = hn_pred, aes (x = Nat, ymin = conf_low, ymax = conf_upr,
                                    color = NULL, fill = group),
               alpha = 0.3) +
   labs(tag = "B",
-       x = "Proportion Natural (%)", y = "Likelihood of Salmonella (%)") +
+       x = "Proportion Natural Cover (%)", y = "Likelihood of Salmonella (%)") +
   scale_y_continuous(breaks = c(0.00, 0.25, 0.50, 0.75, 1.00),
                      labels = c("0", "25", "50", "75", "100")) +
-  scale_color_manual(name = "Chicken",
+  scale_color_manual(name = "Chickens",
                      labels = c("Absent", "Present"),
                      values = c("#CC79A7", "#0072B2")) +
-  scale_linetype_manual(name = "Chicken",
+  scale_linetype_manual(name = "Chickens",
                         labels = c("Absent", "Present"),
                         values = c("dashed", "solid")) +
-  scale_fill_manual(name = "Chicken",
+  scale_fill_manual(name = "Chickens",
                     labels = c("Absent", "Present"),
                     values = c("#CC79A7", "#0072B2")) +
   theme(panel.background = element_blank(), 
@@ -487,9 +568,5 @@ plot_hn = ggplot() +
         legend.title = element_text(size = 14),
         legend.text = element_text(size = 12))
 
-plot_cw / plot_hn
-
-
-
-
+cw_plot / hn_plot
 

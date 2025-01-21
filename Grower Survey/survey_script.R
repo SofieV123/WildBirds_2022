@@ -7,7 +7,7 @@ library(effects)
 library(ggplot2)
 library(MASS)
 library(patchwork)
-library(reshape)
+library(reshape2)
 library(tidyverse)
 
 surv_df = read.table("./survey_response.txt", header = T, sep = "\t")
@@ -17,7 +17,7 @@ surv_df$TotalM = rowSums(surv_df[,c(22,24,26,28,30,32)])
 
 #Formatting ####################################################################
 fs_df = surv_df[,c("Concern", "SizeInt", "ProdInt", "ProduceN", "LivestockS", "BirdObsN", 
-                   "BirdManAtt", "Prevent", "TotalM")]
+                     "BirdManAtt", "Prevent", "TotalM")]
 fs_df_num = data.frame(fs_df)
 
 fact_cols = c("Concern", "SizeInt", "ProdInt", "BirdManAtt", "Prevent")
@@ -29,8 +29,8 @@ fs_df_num = fs_df_num[-26,]
 fs_df_coll = fs_df
 fs_df_coll$Concern[fs_df_coll$Concern == 5] = 4
 
-#Setting Up Models #######################################################
-lvl5_m0 = polr(Concern ~ 1, data = fs_df_coll, Hess = T) #null model
+#Level 5 Model (Concern) #######################################################
+lvl5_m0 = polr(Concern ~ 1, data = fs_df_coll, Hess = T)
 
 lvl5_m1 = polr(Concern ~ ProduceN, data = fs_df_coll, Hess = T)
 lvl5_m2 = polr(Concern ~ LivestockS, data = fs_df_coll, Hess = T)
@@ -83,7 +83,7 @@ lvl5_m38 = polr(Concern ~ ProdInt + ProduceN * BirdObsN, data = fs_df_coll, Hess
 lvl5_m39 = polr(Concern ~ ProdInt + ProduceN + BirdObsN + LivestockS, data = fs_df_coll, Hess = T)
 lvl5_m40 = polr(Concern ~ ProdInt + ProduceN + BirdObsN + TotalM, data = fs_df_coll, Hess = T)
 
-#Looking at Assumptions #####################################################
+#Looking at Assumptions 5 #####################################################
 #Assumption 1: Proportional Odds (Brant test)
 car::poTest(lvl5_m5)
 
@@ -106,7 +106,7 @@ lvl5_dm1 = lm(ConcernT ~ SizeInt.2 + SizeInt.3 + SizeInt.4 + SizeInt.5 + SizeInt
               data = fs_df_dv)
 car::vif(lvl5_dm1, type = "predictor")
 
-#Model Comparison and Interpretation ########################################
+#Model Comparison and Interpretation 5 ########################################
 lvl5_m_list = list(lvl5_m1, lvl5_m2, lvl5_m3, lvl5_m4, lvl5_m5, lvl5_m6, lvl5_m7,
                    lvl5_m8, lvl5_m9, lvl5_m10, lvl5_m11, lvl5_m12, lvl5_m13, lvl5_m14,
                    lvl5_m15, lvl5_m16, lvl5_m17, lvl5_m18, lvl5_m19, lvl5_m20, lvl5_m21,
@@ -124,12 +124,19 @@ cp_tab5 = cbind(cp_tab5, "p value" = pv_vec5)
 ci_tab5 = confint(lvl5_m5)
 ci_tab5 = cbind(OR = coef(lvl5_m5), ci_tab5)
 
+#Stats Live v No Live #########################################
+surv_df.chi = read.table("./surv_chi.txt", sep = "\t", header = T,
+                         row.names = 1)
+
+chi.man = chisq.test(surv_df.chi[1:3,])
+chi.pro = chisq.test(surv_df.chi[4:6,], simulate.p.value = T)
+chi.con = chisq.test(surv_df.chi[7:9,], simulate.p.value = T)
+chi.att = chisq.test(surv_df.chi[10:12,], simulate.p.value = T)
+chi.man = chisq.test(surv_df.chi[13:14,])
+
 #Figure 4 ############################################
 surv_df.gg = read.table("./surv_gg.txt", sep = "\t", header = T)
-surv_df.gg = surv_df.gg %>%
-  pivot_longer(cols = "Organic":"PreventY",
-               names_to = "Chars",
-               values_to = "Perc")
+
 surv_df.gg$Chars = factor(surv_df.gg$Chars, levels = c("Organic", "Mix", "Convent",
                                                        "Produce1", "Produce2", "Produce3",
                                                        "Concern1", "Concern2", "Concern3",
@@ -156,7 +163,7 @@ ggplot(surv_df.gg, aes(fill = Live, x = Chars, y = Perc)) +
   theme(panel.background = element_blank(),
         axis.line = element_line("black"))
 
-#Supplementary Material Figure 2 #######################################
+#Figure 5 ##################################################################
 prev_eff = read.table("./prevent_eff.txt", header = T, 
                       sep = "\t")
 prev_freq = read.table("./prevent_freq.txt", header = T,
