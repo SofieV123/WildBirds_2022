@@ -12,8 +12,3 @@ Data files and code for the wild bird/bacteria 2020-2022 project.
 **Scripts**
 1. [bacterial_script.R](https://github.com/SofieV123/WildBirds_2022/blob/main/bacterial_script.R) contains the R code for Salmonella prevalence models and associated figures.
 2. [birds_script.R](https://github.com/SofieV123/WildBirds_2022/blob/main/birds_script.R) contains the R code for bird community analysis and associated figures. [birds_nmds.txt](https://github.com/SofieV123/WildBirds_2022/blob/main/bird_nmds.txt) is a reformatted version of [birds_100m_filtered.xlsx](https://github.com/SofieV123/WildBirds_2022/blob/main/birds_100m_filtered.xlsx) for the purposes of making Figure 2. 
-
-**Grower Survey**
-1. [survey_qualtrics.docx](https://github.com/SofieV123/WildBirds_2022/blob/main/survey_qualtrics.docx) and [survey_print.docx](https://github.com/SofieV123/WildBirds_2022/blob/main/survey_print.docx) are the online and print versions of the survey, respectively, that were distributed to growers.
-2. [survey_response.xlsx](https://github.com/SofieV123/WildBirds_2022/blob/main/survey_response.xlsx) contains the full survey responses, with factor levels and coded responses from open-ended questiosn shown.
-3. [survey_script.R](https://github.com/SofieV123/WildBirds_2022/blob/main/Grower%20Survey/survey_script.R) contains the R code for grower survey analysis and associated figures. [prevent_eff.txt](https://github.com/SofieV123/WildBirds_2022/blob/main/Grower%20Survey/prevent_eff.txt) and [prevent_freq.txt](https://github.com/SofieV123/WildBirds_2022/blob/main/Grower%20Survey/prevent_freq.txt) are reformatted subsets of [survey_response.xlsx](https://github.com/SofieV123/WildBirds_2022/blob/main/survey_response.xlsx) for the purposes of making Figure 5.
